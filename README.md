@@ -4,7 +4,7 @@ A simple chatbot with two selectable **chain fields** (Solana and EVM). You pick
 
 [![Email](https://img.shields.io/badge/Email-Contact%20Me-blue?style=for-the-badge&logo=gmail)](mailto:solcanine66@gmail.com)
 [![Telegram](https://img.shields.io/badge/Telegram-Message%20Me-2CA5E0?style=for-the-badge&logo=telegram)](https://t.me/solcanine)
-[![Twitter](https://img.shields.io/badge/Twitter-@solcanine-black?style=for-the-badge&logo=x&logoColor=1DA1F2)](https://x.com/intent/follow?screen_name=solcanine)
+[![Twitter](https://img.shields.io/badge/Twitter-@solcanine-black?style=for-the-badge&logo=x)](https://x.com/intent/follow?screen_name=solcanine)
 
 ---
 
