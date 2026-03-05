@@ -1,8 +1,42 @@
 """
-OpenAI embeddings via the openai package only.
-Use this instead of langchain_openai.embeddings to avoid importing chat_models -> transformers -> torch.
+Embeddings without torch: OpenAI API or Hugging Face Inference API (free).
+Use these to avoid langchain_openai.chat_models -> torch.
 """
 from __future__ import annotations
+
+import httpx
+
+
+class HuggingFaceInferenceEmbeddings:
+    """Embeddings via Hugging Face Inference API (free tier, no torch)."""
+
+    def __init__(self, model: str, api_key: str):
+        self.model = model
+        self.api_key = api_key
+        self._url = f"https://api-inference.huggingface.co/models/{model}"
+
+    def _request(self, inputs: str | list[str]) -> list[list[float]]:
+        with httpx.Client(timeout=60.0) as client:
+            r = client.post(
+                self._url,
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={"inputs": inputs},
+            )
+            r.raise_for_status()
+            data = r.json()
+        if isinstance(data, list) and isinstance(data[0], (int, float)):
+            return [data]
+        return data
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        out = []
+        for i in range(0, len(texts), 32):
+            batch = texts[i : i + 32]
+            out.extend(self._request(batch))
+        return out
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._request(text)[0]
 
 
 class OpenAIEmbeddingsDirect:

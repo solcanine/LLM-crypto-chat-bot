@@ -9,8 +9,11 @@ from pathlib import Path
 from app.config import (
     CHUNK_OVERLAP,
     CHUNK_SIZE,
+    EMBEDDING_PROVIDER,
     EVM_DATA_DIR,
     FIELD_NAMES,
+    HF_EMBEDDING_MODEL,
+    HF_TOKEN,
     LOCAL_EMBEDDING_MODEL,
     SOLANA_DATA_DIR,
     USE_LOCAL_EMBEDDINGS,
@@ -116,16 +119,22 @@ def ingest_field(field: str) -> None:
     chunks = split_documents(docs)
     print(f"[{field}] Loaded {len(docs)} docs, split into {len(chunks)} chunks.")
 
-    if USE_LOCAL_EMBEDDINGS:
-        from langchain_community.embeddings import HuggingFaceEmbeddings
-        embeddings = HuggingFaceEmbeddings(model_name=LOCAL_EMBEDDING_MODEL)
-    else:
+    if EMBEDDING_PROVIDER == "huggingface":
+        from app.rag.embeddings_no_torch import HuggingFaceInferenceEmbeddings
+        if not HF_TOKEN:
+            print("HF_TOKEN not set. Get a free token at https://huggingface.co/settings/tokens and set HF_TOKEN in .env")
+            return
+        embeddings = HuggingFaceInferenceEmbeddings(model=HF_EMBEDDING_MODEL, api_key=HF_TOKEN)
+    elif EMBEDDING_PROVIDER == "openai":
         from app.config import OPENAI_API_KEY, EMBEDDING_MODEL
         from app.rag.embeddings_no_torch import OpenAIEmbeddingsDirect
         if not OPENAI_API_KEY:
-            print("OPENAI_API_KEY not set. Set it in .env or use USE_LOCAL_EMBEDDINGS=true (default).")
+            print("OPENAI_API_KEY not set. Set it in .env or use EMBEDDING_PROVIDER=huggingface with HF_TOKEN.")
             return
         embeddings = OpenAIEmbeddingsDirect(model=EMBEDDING_MODEL, api_key=OPENAI_API_KEY)
+    else:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+        embeddings = HuggingFaceEmbeddings(model_name=LOCAL_EMBEDDING_MODEL)
 
     from langchain_community.vectorstores import FAISS
 
@@ -135,11 +144,10 @@ def ingest_field(field: str) -> None:
         err_msg = str(e).lower()
         if "429" in err_msg or "quota" in err_msg or "ratelimit" in err_msg:
             print(
-                "[ERROR] OpenAI API quota exceeded (429). Either:\n"
-                "  1. Add billing at https://platform.openai.com and re-run, or\n"
-                "  2. Use local embeddings: set USE_LOCAL_EMBEDDINGS=true in .env, run:\n"
-                "     pip install sentence-transformers\n"
-                "     python -m app.rag.ingest"
+                "[ERROR] OpenAI API quota exceeded (429). Use free embeddings instead:\n"
+                "  Set in .env: EMBEDDING_PROVIDER=huggingface and HF_TOKEN=hf_xxx\n"
+                "  Get a free token at https://huggingface.co/settings/tokens\n"
+                "  Then run: python -m app.rag.ingest"
             )
         raise
     index_path = get_faiss_index_path(field)

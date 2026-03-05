@@ -9,12 +9,14 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from app.config import (
     EMBEDDING_MODEL,
+    EMBEDDING_PROVIDER,
     FIELD_NAMES,
+    HF_EMBEDDING_MODEL,
+    HF_TOKEN,
     LOCAL_EMBEDDING_MODEL,
     LLM_MODEL,
     OPENAI_API_KEY,
     RETRIEVE_TOP_K,
-    USE_LOCAL_EMBEDDINGS,
     get_faiss_index_path,
 )
 
@@ -35,12 +37,14 @@ def _get_retriever(field: str):
         raise FileNotFoundError(
             f"Vector index not found for '{field}'. Run from project root: python -m app.rag.ingest"
         )
-    if USE_LOCAL_EMBEDDINGS:
-        embeddings = HuggingFaceEmbeddings(model_name=LOCAL_EMBEDDING_MODEL)
-    else:
-        from app.config import EMBEDDING_MODEL
+    if EMBEDDING_PROVIDER == "huggingface":
+        from app.rag.embeddings_no_torch import HuggingFaceInferenceEmbeddings
+        embeddings = HuggingFaceInferenceEmbeddings(model=HF_EMBEDDING_MODEL, api_key=HF_TOKEN)
+    elif EMBEDDING_PROVIDER == "openai":
         from app.rag.embeddings_no_torch import OpenAIEmbeddingsDirect
         embeddings = OpenAIEmbeddingsDirect(model=EMBEDDING_MODEL, api_key=OPENAI_API_KEY)
+    else:
+        embeddings = HuggingFaceEmbeddings(model_name=LOCAL_EMBEDDING_MODEL)
     try:
         vector_store = FAISS.load_local(
             str(index_path),

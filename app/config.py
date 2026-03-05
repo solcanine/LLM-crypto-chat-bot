@@ -30,10 +30,18 @@ def get_faiss_index_path(field: str) -> Path:
 # API and models
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
-# Embeddings: use local (no API key) or OpenAI
-USE_LOCAL_EMBEDDINGS = os.getenv("USE_LOCAL_EMBEDDINGS", "true").lower() in ("1", "true", "yes")
-LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+# Embeddings: "openai" | "huggingface" (free API) | "local" (sentence-transformers, needs torch)
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "huggingface").lower()
+if EMBEDDING_PROVIDER not in ("openai", "huggingface", "local"):
+    EMBEDDING_PROVIDER = "huggingface"
+# Hugging Face free inference API (no OpenAI quota, no torch)
+HF_TOKEN = os.getenv("HF_TOKEN", "") or os.getenv("HUGGINGFACEHUB_API_TOKEN", "")
+HF_EMBEDDING_MODEL = os.getenv("HF_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+# OpenAI embeddings
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+# Local (sentence-transformers) - needs torch
+USE_LOCAL_EMBEDDINGS = EMBEDDING_PROVIDER == "local"
+LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
 # RAG
 CHUNK_SIZE = 1000

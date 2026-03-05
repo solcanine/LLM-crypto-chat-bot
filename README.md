@@ -43,13 +43,15 @@ The app shows a clean UI:
 
 4. **Configure environment:**
    - Copy `.env.example` to `.env`
-   - Set `OPENAI_API_KEY` in `.env` (required for embeddings and LLM)
+   - **Chat (LLM):** set `OPENAI_API_KEY` (required for replies).
+   - **Ingest (embeddings):** default is free Hugging Face API. Set `HF_TOKEN` (get one at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)). If you hit OpenAI quota (429), use `EMBEDDING_PROVIDER=huggingface` and `HF_TOKEN=hf_...` so ingest runs without OpenAI.
 
    Example `.env`:
    ```
    OPENAI_API_KEY=sk-...
    LLM_MODEL=gpt-4o-mini
-   EMBEDDING_MODEL=text-embedding-3-small
+   EMBEDDING_PROVIDER=huggingface
+   HF_TOKEN=hf_...
    ```
 
 ---
